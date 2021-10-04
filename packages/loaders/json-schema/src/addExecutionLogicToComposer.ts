@@ -139,12 +139,15 @@ export async function addExecutionLogicToComposer(
         if (errors?.length) {
           if (!('getFields' in returnType && 'errors' in returnType.getFields())) {
             const normalizedErrors: Error[] = errors.map(normalizeError);
-            const aggregatedError = new AggregateError(
-              normalizedErrors,
-              `${rootTypeName}.${fieldName} failed; \n${normalizedErrors
-                .map(error => ` - ${error.message || error}`)
-                .join('\n')}\n`
-            );
+            const aggregatedError =
+              errors.length > 1
+                ? new AggregateError(
+                    normalizedErrors,
+                    `${rootTypeName}.${fieldName} failed; \n${normalizedErrors
+                      .map(error => ` - ${error.message || error}`)
+                      .join('\n')}\n`
+                  )
+                : normalizedErrors[0];
             aggregatedError.stack = null;
             logger.debug(`=> Throwing the error ${inspect(aggregatedError)}`);
             return aggregatedError;
