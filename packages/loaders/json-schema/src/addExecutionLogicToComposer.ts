@@ -59,7 +59,7 @@ export async function addExecutionLogicToComposer(
         const interpolationData = { root, args, context, info, env };
         const interpolatedBaseUrl = stringInterpolator.parse(baseUrl, interpolationData);
         const interpolatedPath = stringInterpolator.parse(operationConfig.path, interpolationData);
-        const fullPath = urlJoin(interpolatedBaseUrl, interpolatedPath);
+        let fullPath = urlJoin(interpolatedBaseUrl, interpolatedPath);
         const headers = {
           ...operationHeaders,
           ...operationConfig?.headers,
@@ -71,7 +71,6 @@ export async function addExecutionLogicToComposer(
           method: httpMethod,
           headers,
         };
-        const urlObj = new URL(fullPath);
         // Resolve union input
         const input = resolveDataByUnionInputType(args.input, field.args?.input?.type?.getType(), schemaComposer);
         if (input) {
@@ -81,10 +80,8 @@ export async function addExecutionLogicToComposer(
             case 'CONNECT':
             case 'OPTIONS':
             case 'TRACE': {
-              const newSearchParams = new URLSearchParams(input);
-              newSearchParams.forEach((value, key) => {
-                urlObj.searchParams.set(key, value);
-              });
+              fullPath += fullPath.includes('?') ? '&' : '?';
+              fullPath += qsStringify(input);
               break;
             }
             case 'POST':
@@ -104,11 +101,11 @@ export async function addExecutionLogicToComposer(
               throw new Error(`Unknown method ${httpMethod}`);
           }
         }
-        operationLogger.debug(`=> Fetching ${urlObj.toString()}=>${inspect(requestInit)}`);
-        const response = await fetch(urlObj.toString(), requestInit);
+        operationLogger.debug(`=> Fetching ${fullPath}=>${inspect(requestInit)}`);
+        const response = await fetch(fullPath, requestInit);
         const responseText = await response.text();
         operationLogger.debug(
-          `=> Fetched from ${urlObj.toString()}=>{
+          `=> Fetched from ${fullPath}=>{
               body: ${responseText}
             }`
         );
