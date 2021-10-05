@@ -3,19 +3,19 @@ import { OnCircularReference, visitJSONSchema } from './visitJSONSchema';
 
 const reservedTypeNames = ['Query', 'Mutation', 'Subscription'];
 
-function deduplicateObject(object: any, seenMap = new Map()) {
-  if (typeof object === 'object' && object != null) {
-    const stringified = JSON.stringify(object);
+function deduplicateJSONSchema(schema: JSONSchema, seenMap = new Map()) {
+  if (typeof schema === 'object' && schema != null) {
+    const stringified = JSON.stringify(schema);
     const seen = seenMap.get(stringified);
     if (seen) {
       return seen;
     }
-    seenMap.set(stringified, object);
-    for (const key in object) {
-      object[key] = deduplicateObject(object[key], seenMap);
+    seenMap.set(stringified, schema);
+    for (const key in schema) {
+      schema[key] = deduplicateJSONSchema(schema[key], seenMap);
     }
   }
-  return object;
+  return schema;
 }
 async function getDeduplicatedTitles(schema: JSONSchema): Promise<Set<string>> {
   const duplicatedTypeNames = new Set<string>();
@@ -42,7 +42,7 @@ async function getDeduplicatedTitles(schema: JSONSchema): Promise<Set<string>> {
   return duplicatedTypeNames;
 }
 export async function healJSONSchema(schema: JSONSchema) {
-  const deduplicatedSchema = deduplicateObject(schema);
+  const deduplicatedSchema = deduplicateJSONSchema(schema);
   const duplicatedTypeNames = await getDeduplicatedTitles(deduplicatedSchema);
   return visitJSONSchema<JSONSchema>(
     deduplicatedSchema,
