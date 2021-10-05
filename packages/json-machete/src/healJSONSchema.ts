@@ -36,7 +36,7 @@ async function getDeduplicatedTitles(schema: JSONSchema): Promise<Set<string>> {
       visitedSubschemaResultMap: new WeakMap(),
       path: '',
       keepObjectRef: true,
-      onCircularReference: exports.OnCircularReference.IGNORE,
+      onCircularReference: OnCircularReference.IGNORE,
     }
   );
   return duplicatedTypeNames;
