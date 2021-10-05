@@ -37,7 +37,7 @@ const EXAMPLES = {
   },
 };
 
-export default () => {
+const LiveDemo = () => {
 
     const [exampleRepo, setExampleRepo] = useState('json-schema-example');
     const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ export default () => {
     return (
         <div>
             <div className={styles.picker}>
-            Choose Live Example: <select value={exampleRepo} onChange={e => {
+            Choose Live Example: <select className={styles.pickerSelector} value={exampleRepo} onChange={e => {
                 setLoading(true);
                 setExampleRepo(e.target.value);
             }}>
@@ -75,3 +75,5 @@ export default () => {
         </div>
     );
 }
+
+export default LiveDemo;
