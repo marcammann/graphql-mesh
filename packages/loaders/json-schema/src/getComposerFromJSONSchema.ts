@@ -184,12 +184,31 @@ export function getComposerFromJSONSchema(schema: JSONSchema, logger: Logger): P
 
         let output: AnyTypeComposer<any>;
         if (ableToUseGraphQLUnionType) {
-          const resolveType = (data: any) =>
-            data.__typename ||
-            data.resourceType ||
-            outputTypeComposers
-              .find(typeComposer => (typeComposer.getExtension('validate') as ValidateFunction)(data))
-              .getTypeName();
+          const resolveType = (data: any) => {
+            if (data.__typename) {
+              return data.__typename;
+            } else if (data.resourceType) {
+              return data.resourceType;
+            }
+            const errors = new Map<string, string>();
+            for (const outputTypeComposer of outputTypeComposers) {
+              const validateFn = outputTypeComposer.getExtension('validate') as ValidateFunction;
+              if (validateFn) {
+                const isValid = validateFn(data);
+                const typeName = outputTypeComposer.getTypeName();
+                if (isValid) {
+                  return typeName;
+                }
+                errors.set(typeName, inspect(validateFn.errors));
+              }
+            }
+            throw new AggregateError(
+              errors,
+              `Received data doesn't met the JSON Schema; \n${[...errors.entries()].map(
+                ([typeName, error]) => ` - ${typeName}: \n      ${error}\n`
+              )}`
+            );
+          };
           let sharedFields: Record<string, ObjectTypeComposerFieldConfig<any, any, any>>;
           if (generateInterfaceFromSharedFields) {
             for (const typeComposer of outputTypeComposers) {
