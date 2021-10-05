@@ -204,9 +204,9 @@ export function getComposerFromJSONSchema(schema: JSONSchema, logger: Logger): P
             }
             throw new AggregateError(
               errors,
-              `Received data doesn't met the JSON Schema; \n${[...errors.entries()].map(
-                ([typeName, error]) => ` - ${typeName}: \n      ${error}\n`
-              )}`
+              `Received data doesn't met the JSON Schema; \n Data: ${inspect(data)} \n Errors:\n${[
+                ...errors.entries(),
+              ].map(([typeName, error]) => ` - ${typeName}: \n      ${error}\n`)}`
             );
           };
           let sharedFields: Record<string, ObjectTypeComposerFieldConfig<any, any, any>>;
