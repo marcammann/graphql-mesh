@@ -3,11 +3,54 @@ import { OnCircularReference, visitJSONSchema } from './visitJSONSchema';
 
 const reservedTypeNames = ['Query', 'Mutation', 'Subscription'];
 
-export async function healJSONSchema(schema: JSONSchema) {
-  return visitJSONSchema<JSONSchema>(
+function deduplicateObject(object: any, seenMap = new Map()) {
+  if (typeof object === 'object' && object != null) {
+    const stringified = JSON.stringify(object);
+    const seen = seenMap.get(stringified);
+    if (seen) {
+      return seen;
+    }
+    seenMap.set(stringified, object);
+    for (const key in object) {
+      object[key] = deduplicateObject(object[key], seenMap);
+    }
+  }
+  return object;
+}
+async function getDeduplicatedTitles(schema: JSONSchema): Promise<Set<string>> {
+  const duplicatedTypeNames = new Set<string>();
+  const seenTypeNames = new Set<string>();
+  await visitJSONSchema(
     schema,
+    subSchema => {
+      if (typeof subSchema === 'object' && subSchema.title) {
+        if (seenTypeNames.has(subSchema.title)) {
+          duplicatedTypeNames.add(subSchema.title);
+        } else {
+          seenTypeNames.add(subSchema.title);
+        }
+      }
+      return subSchema;
+    },
+    {
+      visitedSubschemaResultMap: new WeakMap(),
+      path: '',
+      keepObjectRef: true,
+      onCircularReference: exports.OnCircularReference.IGNORE,
+    }
+  );
+  return duplicatedTypeNames;
+}
+export async function healJSONSchema(schema: JSONSchema) {
+  const deduplicatedSchema = deduplicateObject(schema);
+  const duplicatedTypeNames = await getDeduplicatedTitles(deduplicatedSchema);
+  return visitJSONSchema<JSONSchema>(
+    deduplicatedSchema,
     (subSchema, { path }) => {
       if (typeof subSchema === 'object') {
+        if (duplicatedTypeNames.has(subSchema.title)) {
+          delete subSchema.title;
+        }
         if (!subSchema.title && !subSchema.$ref) {
           // Try to get definition name if missing
           const maybeDefinitionBasedPath = path.includes('/definitions/') ? path.split('/definitions/')[1] : path;
