@@ -23,7 +23,15 @@ export interface AddExecutionLogicToComposerOptions {
 
 export async function addExecutionLogicToComposer(
   schemaComposer: SchemaComposer,
-  { fetch, logger, operations, operationHeaders, baseUrl, pubsub, errorMessage }: AddExecutionLogicToComposerOptions
+  {
+    fetch: globalFetch,
+    logger,
+    operations,
+    operationHeaders,
+    baseUrl,
+    pubsub: globalPubsub,
+    errorMessage,
+  }: AddExecutionLogicToComposerOptions
 ) {
   logger.debug(`Attaching execution logic to the schema`);
   for (const operationConfig of operations) {
@@ -37,11 +45,12 @@ export async function addExecutionLogicToComposer(
     const field = rootTypeComposer.getField(fieldName);
 
     if (isPubSubOperationConfig(operationConfig)) {
-      if (!pubsub) {
-        throw new Error(`You should have PubSub defined in the config!`);
-      }
       field.description = field.description || `PubSub Topic: ${operationConfig.pubsubTopic}`;
       field.subscribe = (root, args, context, info) => {
+        const pubsub = context?.pubsub || globalPubsub;
+        if (!pubsub) {
+          throw new Error(`You should have PubSub defined in the config or the context!`);
+        }
         const interpolationData = { root, args, context, info, env };
         const pubsubTopic = stringInterpolator.parse(operationConfig.pubsubTopic, interpolationData);
         operationLogger.debug(`=> Subscribing to pubSubTopic: ${pubsubTopic}`);
@@ -102,6 +111,7 @@ export async function addExecutionLogicToComposer(
           }
         }
         operationLogger.debug(`=> Fetching ${fullPath}=>${inspect(requestInit)}`);
+        const fetch = context?.fetch || globalFetch;
         const response = await fetch(fullPath, requestInit);
         const responseText = await response.text();
         operationLogger.debug(
