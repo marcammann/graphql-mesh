@@ -1,5 +1,16 @@
 # @graphql-mesh/runtime
 
+## 0.23.0
+
+### Minor Changes
+
+- 4ec7a14ba: enhance: memoize parse/print document node
+
+### Patch Changes
+
+- Updated dependencies [4ec7a14ba]
+  - @graphql-mesh/utils@0.18.0
+
 ## 0.22.0
 
 ### Minor Changes

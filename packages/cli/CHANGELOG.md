@@ -1,5 +1,19 @@
 # @graphql-mesh/cli
 
+## 0.42.0
+
+### Minor Changes
+
+- 4ec7a14ba: enhance: memoize parse/print document node
+
+### Patch Changes
+
+- Updated dependencies [4ec7a14ba]
+  - @graphql-mesh/config@0.24.0
+  - @graphql-mesh/runtime@0.23.0
+  - @graphql-mesh/utils@0.18.0
+  - @graphql-mesh/store@0.1.17
+
 ## 0.41.0
 
 ### Minor Changes

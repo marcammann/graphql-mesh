@@ -1,5 +1,11 @@
 # @graphql-mesh/utils
 
+## 0.18.0
+
+### Minor Changes
+
+- 4ec7a14ba: enhance: memoize parse/print document node
+
 ## 0.17.2
 
 ### Patch Changes
